@@ -1,0 +1,5 @@
+{
+  "name": "Systemic",
+  "install": "npm ci",
+  "start": "bash scripts/cloud-agent-start.sh"
+}
