@@ -1,5 +1,5 @@
 {
   "name": "Systemic",
-  "install": "npm ci",
-  "start": "bash scripts/cloud-agent-start.sh"
+  "install": "if [ -f scripts/cloud-agent-install.sh ]; then bash scripts/cloud-agent-install.sh; else npm ci; fi",
+  "start": "if [ -f scripts/cloud-agent-start.sh ]; then bash scripts/cloud-agent-start.sh; else exec npm run dev; fi"
 }
