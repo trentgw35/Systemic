@@ -8,7 +8,8 @@
     "start": "next start -H 127.0.0.1 -p 3456",
     "lint": "next lint",
     "db:migrate": "node scripts/apply-migration.mjs",
-    "verify:demo": "node --experimental-strip-types scripts/verify-demo-weights.mjs"
+    "verify:demo": "node --experimental-strip-types scripts/verify-demo-weights.mjs",
+    "accept:m1": "node --experimental-strip-types scripts/m1-acceptance.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",
