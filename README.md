@@ -44,10 +44,16 @@ npm run db:migrate
 
 Or paste `supabase/migrations/001_initial.sql` into the Supabase SQL Editor and run it.
 
-3. Auth redirects: in Supabase Auth → URL configuration, add:
+3. Auth redirects: in Supabase → Authentication → URL configuration:
 
-- Site URL: `http://127.0.0.1:3456`
-- Redirect URLs: `http://127.0.0.1:3456/auth/callback`
+- **For the published app**, set Site URL to `https://systemic.apps.grok.bot` and add these Redirect URLs:
+  - `https://systemic.apps.grok.bot/auth/callback`
+  - `https://systemic.apps.grok.bot/**`
+- **For local dev**, also allow:
+  - `http://127.0.0.1:3456/auth/callback`
+  - `http://127.0.0.1:3456/**`
+
+If Site URL stays on `localhost:3000`, magic-link emails send people there and the browser shows “connection refused.”
 
 4. Run the app:
 
