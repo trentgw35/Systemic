@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { FormEvent, Suspense, useState } from "react";
-import { createClient } from "@/lib/supabase/client";
+import { createClientAsync } from "@/lib/supabase/client";
 
 function LoginForm() {
   const searchParams = useSearchParams();
@@ -20,7 +20,7 @@ function LoginForm() {
     e.preventDefault();
     setStatus("sending");
     setMessage("");
-    const supabase = createClient();
+    const supabase = await createClientAsync();
     const origin = window.location.origin;
     const { error } = await supabase.auth.signInWithOtp({
       email: email.trim(),
@@ -40,7 +40,7 @@ function LoginForm() {
   async function onGoogle() {
     setStatus("sending");
     setMessage("");
-    const supabase = createClient();
+    const supabase = await createClientAsync();
     const origin = window.location.origin;
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",

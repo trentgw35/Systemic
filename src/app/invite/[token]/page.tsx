@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { createClient } from "@/lib/supabase/client";
+import { createClientAsync } from "@/lib/supabase/client";
 
 export default function AcceptInvitePage() {
   const { token } = useParams<{ token: string }>();
@@ -16,7 +16,7 @@ export default function AcceptInvitePage() {
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const supabase = createClient();
+      const supabase = await createClientAsync();
       const {
         data: { user },
       } = await supabase.auth.getUser();
