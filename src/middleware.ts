@@ -11,6 +11,7 @@ export async function middleware(request: NextRequest) {
     process.env.SUPABASE_ANON_KEY ??
     "";
 
+  // Without Supabase env, allow public pages; protected routes will fail closed later.
   if (!url || !anon) {
     return supabaseResponse;
   }

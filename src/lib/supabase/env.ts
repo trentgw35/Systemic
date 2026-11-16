@@ -1,6 +1,21 @@
+export function getSupabaseUrlOptional() {
+  return process.env.NEXT_PUBLIC_SUPABASE_URL ?? process.env.SUPABASE_URL ?? "";
+}
+
+export function getSupabaseAnonKeyOptional() {
+  return (
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ??
+    process.env.SUPABASE_ANON_KEY ??
+    ""
+  );
+}
+
+export function isSupabaseConfigured() {
+  return Boolean(getSupabaseUrlOptional() && getSupabaseAnonKeyOptional());
+}
+
 export function getSupabaseUrl() {
-  const url =
-    process.env.NEXT_PUBLIC_SUPABASE_URL ?? process.env.SUPABASE_URL ?? "";
+  const url = getSupabaseUrlOptional();
   if (!url) {
     throw new Error("Missing SUPABASE_URL / NEXT_PUBLIC_SUPABASE_URL");
   }
@@ -8,10 +23,7 @@ export function getSupabaseUrl() {
 }
 
 export function getSupabaseAnonKey() {
-  const key =
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ??
-    process.env.SUPABASE_ANON_KEY ??
-    "";
+  const key = getSupabaseAnonKeyOptional();
   if (!key) {
     throw new Error("Missing SUPABASE_ANON_KEY / NEXT_PUBLIC_SUPABASE_ANON_KEY");
   }
