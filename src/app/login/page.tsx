@@ -20,39 +20,57 @@ function LoginForm() {
     e.preventDefault();
     setStatus("sending");
     setMessage("");
-    const supabase = await createClientAsync();
-    const origin = window.location.origin;
-    const { error } = await supabase.auth.signInWithOtp({
-      email: email.trim(),
-      options: {
-        emailRedirectTo: `${origin}/auth/callback?next=${encodeURIComponent(next)}`,
-      },
-    });
-    if (error) {
+    try {
+      const supabase = await createClientAsync();
+      const origin = window.location.origin;
+      const { error } = await supabase.auth.signInWithOtp({
+        email: email.trim(),
+        options: {
+          emailRedirectTo: `${origin}/auth/callback?next=${encodeURIComponent(next)}`,
+        },
+      });
+      if (error) {
+        setStatus("error");
+        setMessage(error.message);
+        return;
+      }
+      setStatus("sent");
+      setMessage("Check your email for the sign-in link.");
+    } catch (err) {
       setStatus("error");
-      setMessage(error.message);
-      return;
+      setMessage(
+        err instanceof Error
+          ? err.message
+          : "Could not reach sign-in. Try refreshing the page.",
+      );
     }
-    setStatus("sent");
-    setMessage("Check your email for the sign-in link.");
   }
 
   async function onGoogle() {
     setStatus("sending");
     setMessage("");
-    const supabase = await createClientAsync();
-    const origin = window.location.origin;
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo: `${origin}/auth/callback?next=${encodeURIComponent(next)}`,
-      },
-    });
-    if (error) {
+    try {
+      const supabase = await createClientAsync();
+      const origin = window.location.origin;
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: `${origin}/auth/callback?next=${encodeURIComponent(next)}`,
+        },
+      });
+      if (error) {
+        setStatus("error");
+        setMessage(
+          error.message ||
+            "Google sign-in isn’t configured yet. Use the email link, or see the README.",
+        );
+      }
+    } catch (err) {
       setStatus("error");
       setMessage(
-        error.message ||
-          "Google sign-in isn’t configured yet. Use the email link, or see the README.",
+        err instanceof Error
+          ? err.message
+          : "Could not reach sign-in. Try refreshing the page.",
       );
     }
   }

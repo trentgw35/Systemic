@@ -41,7 +41,9 @@ export async function middleware(request: NextRequest) {
   const isAuthRoute =
     path.startsWith("/login") || path.startsWith("/auth");
   const isInvite = path.startsWith("/invite/");
-  const isPublic = isAuthRoute || path === "/";
+  // Browser client loads URL + anon key before any session exists.
+  const isPublicApi = path === "/api/public-config";
+  const isPublic = isAuthRoute || path === "/" || isPublicApi;
 
   if (!user && !isPublic && !isInvite) {
     const redirect = request.nextUrl.clone();
