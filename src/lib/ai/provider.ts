@@ -51,6 +51,13 @@ export function isAIFeaturesEnabled() {
   return process.env.AI_FEATURES_ENABLED === "true";
 }
 
+/** True when a provider name and key are present (live adapter still optional). */
+export function isAIProviderConfigured() {
+  return Boolean(
+    process.env.AI_PROVIDER?.trim() && process.env.AI_API_KEY?.trim(),
+  );
+}
+
 export function getAIProvider(): AIProvider {
   // Provider/model/key are env-configured; never hard-coded.
   // A live provider is wired later behind this adapter.

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { DraftWithAI } from "@/components/ai/draft-with-ai";
 import { evidenceLabel } from "@/lib/engine/kinds";
 import type { ItemMode, EvidenceKind } from "@/lib/types";
 import { CoupledSliders, type SliderChild } from "./coupled-sliders";
@@ -27,6 +28,7 @@ export function SectionEditor({
   sectionShare,
   inputs,
   mode,
+  itemTitle,
   localLabel,
   wholeLabel,
   confirmed,
@@ -38,6 +40,7 @@ export function SectionEditor({
   sectionShare: number;
   inputs: Child[];
   mode: ItemMode;
+  itemTitle: string;
   localLabel: string;
   wholeLabel: string;
   confirmed: boolean;
@@ -290,6 +293,24 @@ export function SectionEditor({
         >
           Add input
         </button>
+        <DraftWithAI
+          mode={mode}
+          title={itemTitle}
+          onDraftSections={(labels) => {
+            // Insert each proposed label as an un-confirmed input
+            void (async () => {
+              for (const label of labels.slice(0, 8)) {
+                await structure({
+                  action: "add_input",
+                  parent_id: parentId,
+                  label,
+                  kind: "opinion",
+                });
+              }
+              onChanged();
+            })();
+          }}
+        />
       </div>
       {error && (
         <p className="text-sm text-danger" role="alert">

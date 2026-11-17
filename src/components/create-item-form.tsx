@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
+import { DraftWithAI } from "@/components/ai/draft-with-ai";
 
 type Member = { id: string; name: string; email: string };
 
@@ -143,6 +144,22 @@ export function CreateItemForm({
           />
         </label>
       )}
+
+      <DraftWithAI
+        mode={mode}
+        title={title}
+        onDraftSections={(labels) => {
+          if (labels.length < 2) return;
+          const next = labels.slice(0, 6).map((name) => ({
+            name,
+            owner_id: currentUserId,
+          }));
+          while (next.length < 2) {
+            next.push({ name: "", owner_id: currentUserId });
+          }
+          setSections(next);
+        }}
+      />
 
       <fieldset className="space-y-3">
         <legend className="text-sm font-medium text-ink">

@@ -76,10 +76,19 @@ export default async function WorkspaceHomePage({
           </Link>
         </div>
         {!items?.length ? (
-          <p className="mt-2 rounded-md border border-dashed border-line bg-white/40 p-4 text-sm text-ink-soft">
-            No items yet. Create a decision, or start a workspace with demos
-            enabled to load the Context 03 examples.
-          </p>
+          <div className="mt-2 rounded-md border border-dashed border-line bg-white/40 p-4">
+            <p className="font-medium text-ink">No items yet</p>
+            <p className="mt-1 text-sm text-ink-soft">
+              Create a decision or RCCA to start weighting together. Demo
+              workspaces also load the Context 03 examples.
+            </p>
+            <Link
+              href={`/w/${workspaceId}/items/new`}
+              className="mt-3 inline-block text-sm font-semibold text-sea hover:text-sea-deep"
+            >
+              Create the first item
+            </Link>
+          </div>
         ) : (
           <ul className="mt-3 divide-y divide-line rounded-md border border-line bg-white/50">
             {items.map((item) => (

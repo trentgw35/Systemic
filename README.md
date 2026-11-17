@@ -18,9 +18,9 @@ Multi-user app for weighted decision trees and reverse root-cause (RCCA) records
 
 **Milestone 3** — Things to check, lock-in, interactive Full picture, tight RLS.
 
-**Milestone 4 (current)** — Structural editing (add/remove/rename/tag/break down), Level-1 facilitator controls, delegation + take-back (chains), RCCA create + reverse checks/labels, post-lock-in corrective actions with coverage line.
+**Milestone 4** — Structural editing, delegation, RCCA, corrective actions.
 
-Still ahead: library (M05).
+**Milestone 5 (current)** — Cross-workspace **Library** (group / search / filter / edit group tag), AI stub UI behind `AI_FEATURES_ENABLED` (Draft with AI + check interpretation), pilot polish (empty states, keyboard sliders).
 
 ## Local setup
 
@@ -91,6 +91,13 @@ Enable Email provider in Supabase Auth (on by default). For local testing, check
 | `npm run accept:m2` | Live M02 acceptance against Supabase |
 | `npm run test:m3-checks` | Offline M03 checks + lock-in stamp fixtures |
 | `npm run test:m4-engine` | Offline M04 structure + RCCA fixture checks |
+| `npm run test:m5-library` | Offline M05 library filter + AI stub checks |
+
+### Pilot readiness
+
+- Works: auth, workspaces/invites, full engine (weights, structure, delegation, checks, lock-in), RCCA + actions, library.
+- Stubbed: live AI provider (adapter + UI only; set `AI_FEATURES_ENABLED=true` plus `AI_PROVIDER` / `AI_API_KEY` later).
+- Out of scope: invite reminder emails beyond Supabase defaults, payments, native apps.
 
 If your Supabase project was created from an earlier migration, also run `003_rls_lockin_snapshots.sql` in the SQL Editor (adds snapshot columns and tightens RLS).
 

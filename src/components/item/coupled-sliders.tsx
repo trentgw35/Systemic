@@ -162,6 +162,11 @@ export function CoupledSliders({
               step={0.1}
               value={child.local_weight}
               disabled={busy || pinned.has(child.id)}
+              aria-label={`${child.label} weight within your section`}
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-valuenow={Number(child.local_weight.toFixed(1))}
+              aria-valuetext={`${child.local_weight.toFixed(1)} percent within section, ${child.share_of_whole.toFixed(1)} percent of the whole`}
               onChange={(e) => preview(child.id, Number(e.target.value))}
               onMouseUp={(e) =>
                 commit(child.id, Number((e.target as HTMLInputElement).value))
@@ -172,6 +177,19 @@ export function CoupledSliders({
                   Number((e.target as HTMLInputElement).value),
                 )
               }
+              onKeyUp={(e) => {
+                if (
+                  e.key === "ArrowLeft" ||
+                  e.key === "ArrowRight" ||
+                  e.key === "Home" ||
+                  e.key === "End"
+                ) {
+                  commit(
+                    child.id,
+                    Number((e.target as HTMLInputElement).value),
+                  );
+                }
+              }}
               onBlur={(e) => commit(child.id, Number(e.target.value))}
               className="mt-3 w-full accent-[var(--sea)]"
             />

@@ -44,6 +44,7 @@ export function YourSection({
                 sectionShare={section.share_of_whole}
                 inputs={section.children}
                 mode={item.mode}
+                itemTitle={item.title}
                 localLabel={stats_labels.local}
                 wholeLabel={stats_labels.whole}
                 confirmed={section.confirmed}

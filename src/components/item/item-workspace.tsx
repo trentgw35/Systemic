@@ -188,6 +188,37 @@ export function ItemWorkspace({ itemId }: { itemId: string }) {
               Actions address {view.actions_coverage_pct}% of the explanation
             </p>
           )}
+          <p className="mt-2 text-sm text-ink-soft">
+            Group:{" "}
+            <span className="font-medium text-ink">
+              {item.group_tag || "No group"}
+            </span>
+            {view.viewer_is_item_owner && (
+              <>
+                {" · "}
+                <button
+                  type="button"
+                  className="font-semibold text-sea hover:text-sea-deep"
+                  onClick={() => {
+                    const next = window.prompt(
+                      "Group tag",
+                      item.group_tag ?? "",
+                    );
+                    if (next === null) return;
+                    void fetch(`/api/items/${itemId}/group-tag`, {
+                      method: "PATCH",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({
+                        group_tag: next.trim() || null,
+                      }),
+                    }).then(() => load());
+                  }}
+                >
+                  Edit group
+                </button>
+              </>
+            )}
+          </p>
         </div>
         <div className="flex flex-col gap-2">
           {view.viewer_is_item_owner && !locked && (
@@ -218,7 +249,7 @@ export function ItemWorkspace({ itemId }: { itemId: string }) {
 
       <StatsStrip stats={stats} labels={stats_labels} />
 
-      <ChecksPanel checks={checks} />
+      <ChecksPanel checks={checks} itemTitle={item.title} mode={item.mode} />
 
       {!locked && <YourSection view={view} onChanged={load} />}
 
