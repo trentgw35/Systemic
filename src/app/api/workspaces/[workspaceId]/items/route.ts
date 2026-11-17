@@ -9,6 +9,7 @@ const bodySchema = z.object({
   title: z.string().trim().min(1).max(200),
   group_tag: z.string().trim().max(100).optional().nullable(),
   mode: z.enum(["decision", "rcca"]).default("decision"),
+  expected_areas: z.array(z.string().trim().min(1)).max(20).nullable().optional(),
   sections: z
     .array(
       z.object({
@@ -51,7 +52,7 @@ export async function POST(
     );
   }
 
-  const { title, group_tag, mode, sections } = parsed.data;
+  const { title, group_tag, mode, sections, expected_areas } = parsed.data;
   const admin = createAdminClient();
 
   const ownerIds = [...new Set(sections.map((s) => s.owner_id))];
@@ -76,6 +77,8 @@ export async function POST(
       title,
       group_tag: group_tag || null,
       created_by: user.id,
+      expected_areas:
+        mode === "rcca" && expected_areas?.length ? expected_areas : null,
     })
     .select("*")
     .single();

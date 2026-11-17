@@ -72,7 +72,7 @@ export default async function WorkspaceHomePage({
             href={`/w/${workspaceId}/items/new`}
             className="text-sm font-semibold text-sea hover:text-sea-deep"
           >
-            New decision
+            New item
           </Link>
         </div>
         {!items?.length ? (

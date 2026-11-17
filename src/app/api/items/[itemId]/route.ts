@@ -29,6 +29,8 @@ export async function GET(
     loaded.rows,
     user.id,
     loaded.nameById,
+    loaded.members,
+    loaded.actionNotes,
   );
   return NextResponse.json(view);
 }

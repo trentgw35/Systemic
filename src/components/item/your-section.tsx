@@ -1,7 +1,7 @@
 "use client";
 
 import type { ItemViewResponse } from "@/lib/engine/item-view";
-import { CoupledSliders } from "./coupled-sliders";
+import { SectionEditor } from "./section-editor";
 
 export function YourSection({
   view,
@@ -10,7 +10,7 @@ export function YourSection({
   view: ItemViewResponse;
   onChanged: () => void;
 }) {
-  const { your_sections, item, stats_labels } = view;
+  const { your_sections, item, stats_labels, members } = view;
 
   return (
     <section>
@@ -38,7 +38,7 @@ export function YourSection({
                   </strong>
                 </span>
               </div>
-              <CoupledSliders
+              <SectionEditor
                 itemId={item.id}
                 parentId={section.parent_id}
                 sectionShare={section.share_of_whole}
@@ -47,6 +47,7 @@ export function YourSection({
                 localLabel={stats_labels.local}
                 wholeLabel={stats_labels.whole}
                 confirmed={section.confirmed}
+                members={members}
                 onChanged={onChanged}
               />
             </div>

@@ -15,8 +15,10 @@ export function CreateItemForm({
   currentUserId: string;
 }) {
   const router = useRouter();
+  const [mode, setMode] = useState<"decision" | "rcca">("decision");
   const [title, setTitle] = useState("");
   const [groupTag, setGroupTag] = useState("");
+  const [expectedAreas, setExpectedAreas] = useState("");
   const [sections, setSections] = useState([
     { name: "", owner_id: currentUserId },
     { name: "", owner_id: currentUserId },
@@ -51,13 +53,18 @@ export function CreateItemForm({
     setStatus("saving");
     setMessage("");
     try {
+      const areas = expectedAreas
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean);
       const res = await fetch(`/api/workspaces/${workspaceId}/items`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           title: title.trim(),
           group_tag: groupTag.trim() || null,
-          mode: "decision",
+          mode,
+          expected_areas: mode === "rcca" ? areas : null,
           sections: sections.map((s) => ({
             name: s.name.trim(),
             owner_id: s.owner_id,
@@ -66,7 +73,7 @@ export function CreateItemForm({
       });
       const body = await res.json().catch(() => ({}));
       if (!res.ok) {
-        throw new Error(body.error ?? "Could not create decision");
+        throw new Error(body.error ?? "Could not create item");
       }
       router.push(`/w/${workspaceId}/items/${body.id}`);
       router.refresh();
@@ -78,14 +85,40 @@ export function CreateItemForm({
 
   return (
     <form onSubmit={onSubmit} className="space-y-6">
+      <fieldset className="flex flex-wrap gap-3">
+        <legend className="sr-only">Mode</legend>
+        <label className="flex items-center gap-2 text-sm">
+          <input
+            type="radio"
+            name="mode"
+            checked={mode === "decision"}
+            onChange={() => setMode("decision")}
+          />
+          Decision
+        </label>
+        <label className="flex items-center gap-2 text-sm">
+          <input
+            type="radio"
+            name="mode"
+            checked={mode === "rcca"}
+            onChange={() => setMode("rcca")}
+          />
+          What went wrong (RCCA)
+        </label>
+      </fieldset>
+
       <label className="block text-sm font-medium text-ink">
-        Decision title
+        {mode === "rcca" ? "Problem statement" : "Decision title"}
         <input
           required
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           className="mt-1 w-full rounded-md border border-line bg-white/70 px-3 py-2.5 outline-none ring-sea focus:ring-2"
-          placeholder="What are we deciding?"
+          placeholder={
+            mode === "rcca"
+              ? "What went wrong, when, and what it cost?"
+              : "What are we deciding?"
+          }
         />
       </label>
 
@@ -99,12 +132,24 @@ export function CreateItemForm({
         />
       </label>
 
+      {mode === "rcca" && (
+        <label className="block text-sm font-medium text-ink">
+          Expected areas (optional, comma-separated)
+          <input
+            value={expectedAreas}
+            onChange={(e) => setExpectedAreas(e.target.value)}
+            className="mt-1 w-full rounded-md border border-line bg-white/70 px-3 py-2.5 outline-none ring-sea focus:ring-2"
+            placeholder="Supply, Planning, Quality"
+          />
+        </label>
+      )}
+
       <fieldset className="space-y-3">
         <legend className="text-sm font-medium text-ink">
-          Sections (2–6)
+          {mode === "rcca" ? "Cause areas (2–6)" : "Sections (2–6)"}
         </legend>
         <p className="text-sm text-ink-soft">
-          Each section starts with equal share and two starter inputs at 50/50.
+          Each starts with equal share and two starter inputs at 50/50.
         </p>
         {sections.map((section, index) => (
           <div
@@ -116,7 +161,11 @@ export function CreateItemForm({
               value={section.name}
               onChange={(e) => updateSection(index, { name: e.target.value })}
               className="rounded-md border border-line bg-white/70 px-3 py-2 outline-none ring-sea focus:ring-2"
-              placeholder={`Section ${index + 1} name`}
+              placeholder={
+                mode === "rcca"
+                  ? `Area ${index + 1}`
+                  : `Section ${index + 1} name`
+              }
             />
             <select
               value={section.owner_id}
@@ -147,7 +196,7 @@ export function CreateItemForm({
           disabled={sections.length >= 6}
           className="text-sm font-semibold text-sea hover:text-sea-deep disabled:opacity-40"
         >
-          Add section
+          Add {mode === "rcca" ? "area" : "section"}
         </button>
       </fieldset>
 
@@ -156,7 +205,11 @@ export function CreateItemForm({
         disabled={status === "saving"}
         className="rounded-md bg-ink px-5 py-2.5 text-sm font-semibold text-paper hover:bg-sea-deep disabled:opacity-60"
       >
-        {status === "saving" ? "Creating…" : "Create decision"}
+        {status === "saving"
+          ? "Creating…"
+          : mode === "rcca"
+            ? "Create RCCA"
+            : "Create decision"}
       </button>
       {message && (
         <p className="text-sm text-danger" role="alert">

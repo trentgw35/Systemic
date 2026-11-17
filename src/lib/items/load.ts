@@ -16,18 +16,24 @@ export async function requireWorkspaceMember(
   return data;
 }
 
-/**
- * Load item + full node tree for a workspace member.
- * Membership is checked with the user-scoped client; nodes are read with the
- * service role so RLS can deny direct browser/PostgREST access to other
- * members' pre-lock-in content while the API still computes masked views.
- */
 export async function loadItemForMember(
   supabase: SupabaseClient,
   itemId: string,
   userId: string,
 ): Promise<
-  | { item: Item; rows: NodeRow[]; nameById: Map<string, string> }
+  | {
+      item: Item;
+      rows: NodeRow[];
+      nameById: Map<string, string>;
+      members: Array<{ id: string; name: string; email: string }>;
+      actionNotes: Array<{
+        id: string;
+        node_id: string;
+        text: string;
+        owner_name: string;
+        due_date: string | null;
+      }>;
+    }
   | { error: string; status: number }
 > {
   const { data: item, error } = await supabase
@@ -60,23 +66,36 @@ export async function loadItemForMember(
     return { error: nErr.message, status: 500 };
   }
 
-  const ownerIds = [
-    ...new Set(
-      (rows ?? [])
-        .map((r) => r.owner_id as string | null)
-        .filter((id): id is string => Boolean(id)),
-    ),
-  ];
+  const { data: memberships } = await admin
+    .from("memberships")
+    .select("user_id, profiles(id, name, email)")
+    .eq("workspace_id", item.workspace_id);
+
+  const members: Array<{ id: string; name: string; email: string }> = [];
   const nameById = new Map<string, string>();
-  if (ownerIds.length) {
-    const { data: profiles } = await admin
-      .from("profiles")
-      .select("id, name, email")
-      .in("id", ownerIds);
-    for (const p of profiles ?? []) {
-      nameById.set(p.id, p.name?.trim() || p.email || "Someone");
+  for (const m of memberships ?? []) {
+    const p = m.profiles as unknown as {
+      id: string;
+      name: string;
+      email: string;
+    } | null;
+    const id = p?.id ?? m.user_id;
+    const name = p?.name?.trim() || p?.email || "Member";
+    const email = p?.email ?? "";
+    members.push({ id, name, email });
+    nameById.set(id, name);
+  }
+
+  for (const r of rows ?? []) {
+    if (r.owner_id && !nameById.has(r.owner_id)) {
+      nameById.set(r.owner_id, "Member");
     }
   }
+
+  const { data: notes } = await admin
+    .from("action_notes")
+    .select("id, node_id, text, owner_name, due_date")
+    .eq("item_id", itemId);
 
   return {
     item: item as Item,
@@ -85,5 +104,13 @@ export async function loadItemForMember(
       local_weight: Number(r.local_weight),
     })) as NodeRow[],
     nameById,
+    members,
+    actionNotes: (notes ?? []).map((n) => ({
+      id: n.id,
+      node_id: n.node_id,
+      text: n.text,
+      owner_name: n.owner_name,
+      due_date: n.due_date,
+    })),
   };
 }

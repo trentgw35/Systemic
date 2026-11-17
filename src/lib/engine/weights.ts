@@ -93,3 +93,65 @@ export function redistributeWeights(
   }
   return rows;
 }
+
+/** Insert a new sibling at 10% (or 50/50 if only one existing sibling). */
+export function weightsAfterAdd(
+  siblings: WeightRow[],
+  newId: string,
+): WeightRow[] {
+  if (siblings.length === 0) {
+    return [{ id: newId, local_weight: 100 }];
+  }
+  if (siblings.length === 1) {
+    return [
+      { id: siblings[0].id, local_weight: 50 },
+      { id: newId, local_weight: 50 },
+    ];
+  }
+  const scaled = siblings.map((s) => ({
+    id: s.id,
+    local_weight: Number((s.local_weight * 0.9).toFixed(4)),
+  }));
+  const sum = scaled.reduce((a, r) => a + r.local_weight, 0);
+  const drift = Number((90 - sum).toFixed(4));
+  if (Math.abs(drift) > 0) {
+    scaled[scaled.length - 1].local_weight = Number(
+      (scaled[scaled.length - 1].local_weight + drift).toFixed(4),
+    );
+  }
+  return [...scaled, { id: newId, local_weight: 10 }];
+}
+
+/** Remove a sibling and redistribute its weight proportionally. */
+export function weightsAfterRemove(
+  siblings: WeightRow[],
+  removeId: string,
+): WeightRow[] {
+  const removed = siblings.find((s) => s.id === removeId);
+  if (!removed) throw new Error("node not in children-set");
+  const remaining = siblings.filter((s) => s.id !== removeId);
+  if (remaining.length === 0) return [];
+  const remSum = remaining.reduce((a, r) => a + r.local_weight, 0);
+  if (remSum <= 0) {
+    const each = Number((100 / remaining.length).toFixed(4));
+    let assigned = 0;
+    return remaining.map((r, i) => {
+      if (i === remaining.length - 1) {
+        return { id: r.id, local_weight: Number((100 - assigned).toFixed(4)) };
+      }
+      assigned += each;
+      return { id: r.id, local_weight: each };
+    });
+  }
+  let assigned = 0;
+  return remaining.map((r, i) => {
+    if (i === remaining.length - 1) {
+      return { id: r.id, local_weight: Number((100 - assigned).toFixed(4)) };
+    }
+    const w = Number(
+      (((r.local_weight / remSum) * 100)).toFixed(4),
+    );
+    assigned += w;
+    return { id: r.id, local_weight: w };
+  });
+}

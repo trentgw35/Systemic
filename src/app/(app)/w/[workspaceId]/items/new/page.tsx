@@ -57,9 +57,9 @@ export default async function NewItemPage({
         >
           ← {workspace.name}
         </Link>
-        <h1 className="mt-2 font-display text-3xl text-ink">New decision</h1>
+        <h1 className="mt-2 font-display text-3xl text-ink">New item</h1>
         <p className="mt-1 text-sm text-ink-soft">
-          Name the decision, assign sections, and start weighting.
+          Start a decision or an RCCA, assign sections, and start weighting.
         </p>
       </div>
       <CreateItemForm
