@@ -44,7 +44,7 @@ Required:
 npm run db:migrate
 ```
 
-Or paste `supabase/migrations/*.sql` into the Supabase SQL Editor and run them in order (include `002_update_children_weights.sql` for the preferred atomic weight RPC).
+Or paste `supabase/migrations/*.sql` into the Supabase SQL Editor and run them in order. If you already applied an older `002`, also run `004_fix_rpc_actor_binding.sql` (binds RPC actors to the signed-in user and revokes direct client EXECUTE).
 
 3. Auth redirects: in Supabase → Authentication → URL configuration:
 

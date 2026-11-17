@@ -1,4 +1,6 @@
 -- Atomic children-set weight update (sum-to-100 in one transaction) + unconfirm parent.
+-- p_actor must equal auth.uid(); authenticated callers cannot impersonate another user.
+-- EXECUTE is not granted to authenticated — the Next.js API uses the service role.
 
 create or replace function public.update_children_weights(
   p_item_id uuid,
@@ -17,6 +19,10 @@ declare
   v_ws uuid;
   r record;
 begin
+  if p_actor is distinct from auth.uid() then
+    raise exception 'actor must be the signed-in user';
+  end if;
+
   select i.locked_at, i.workspace_id into v_locked, v_ws
   from public.items i
   where i.id = p_item_id;
@@ -35,7 +41,7 @@ begin
   from public.nodes
   where id = p_parent_id and item_id = p_item_id;
 
-  if v_owner is null or v_owner <> p_actor then
+  if v_owner is null or v_owner <> auth.uid() then
     raise exception 'only the section owner can change these weights';
   end if;
 
@@ -60,7 +66,8 @@ end;
 $$;
 
 revoke all on function public.update_children_weights(uuid, uuid, jsonb, uuid) from public;
-grant execute on function public.update_children_weights(uuid, uuid, jsonb, uuid) to authenticated;
+revoke all on function public.update_children_weights(uuid, uuid, jsonb, uuid) from authenticated;
+revoke all on function public.update_children_weights(uuid, uuid, jsonb, uuid) from anon;
 
 create or replace function public.set_node_confirmed(
   p_item_id uuid,
@@ -79,6 +86,10 @@ declare
   v_ws uuid;
   v_child_count int;
 begin
+  if p_actor is distinct from auth.uid() then
+    raise exception 'actor must be the signed-in user';
+  end if;
+
   select i.locked_at, i.workspace_id into v_locked, v_ws
   from public.items i
   where i.id = p_item_id;
@@ -97,7 +108,7 @@ begin
   from public.nodes
   where id = p_node_id and item_id = p_item_id;
 
-  if v_owner is null or v_owner <> p_actor then
+  if v_owner is null or v_owner <> auth.uid() then
     raise exception 'only the section owner can confirm this set';
   end if;
 
@@ -122,4 +133,5 @@ end;
 $$;
 
 revoke all on function public.set_node_confirmed(uuid, uuid, boolean, uuid) from public;
-grant execute on function public.set_node_confirmed(uuid, uuid, boolean, uuid) to authenticated;
+revoke all on function public.set_node_confirmed(uuid, uuid, boolean, uuid) from authenticated;
+revoke all on function public.set_node_confirmed(uuid, uuid, boolean, uuid) from anon;
