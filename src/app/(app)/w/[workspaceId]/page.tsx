@@ -66,24 +66,36 @@ export default async function WorkspaceHomePage({
       </div>
 
       <section>
-        <h2 className="font-display text-xl text-ink">Items</h2>
+        <div className="flex items-end justify-between gap-3">
+          <h2 className="font-display text-xl text-ink">Items</h2>
+          <Link
+            href={`/w/${workspaceId}/items/new`}
+            className="text-sm font-semibold text-sea hover:text-sea-deep"
+          >
+            New decision
+          </Link>
+        </div>
         {!items?.length ? (
           <p className="mt-2 rounded-md border border-dashed border-line bg-white/40 p-4 text-sm text-ink-soft">
-            No items in this workspace yet. Demo seeds appear when you create a
-            workspace with demos enabled. Creating new decisions arrives in
-            Milestone 2.
+            No items yet. Create a decision, or start a workspace with demos
+            enabled to load the Context 03 examples.
           </p>
         ) : (
           <ul className="mt-3 divide-y divide-line rounded-md border border-line bg-white/50">
             {items.map((item) => (
-              <li key={item.id} className="px-4 py-3">
-                <div className="font-medium text-ink">{item.title}</div>
-                <div className="text-sm text-ink-soft">
-                  {item.mode === "rcca" ? "What went wrong" : "Decision"}
-                  {" · "}
-                  {item.lock_stamp ?? "In progress"}
-                  {item.group_tag ? ` · ${item.group_tag}` : ""}
-                </div>
+              <li key={item.id}>
+                <Link
+                  href={`/w/${workspaceId}/items/${item.id}`}
+                  className="block px-4 py-3 hover:bg-white/70"
+                >
+                  <div className="font-medium text-ink">{item.title}</div>
+                  <div className="text-sm text-ink-soft">
+                    {item.mode === "rcca" ? "What went wrong" : "Decision"}
+                    {" · "}
+                    {item.lock_stamp ?? "In progress"}
+                    {item.group_tag ? ` · ${item.group_tag}` : ""}
+                  </div>
+                </Link>
               </li>
             ))}
           </ul>

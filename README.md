@@ -10,15 +10,13 @@ Multi-user app for weighted decision trees and reverse root-cause (RCCA) records
 - Supabase (Postgres, Auth, RLS)
 - Deploy target: Vercel + Supabase
 
-## Milestone 1 (this slice)
+## Milestones
 
-- Auth: email magic link + Google OAuth UI (Google provider optional until configured)
-- Workspaces: create, invite by email or shareable link, accept invite, switcher, member list
-- Schema for User/Profile, Workspace, Membership, Item, Node, ActionNote
-- AI adapter stub (`AIProvider`) behind `AI_FEATURES_ENABLED` (default off)
-- Demo workspace seed: both Context 03 worked examples
+**Milestone 1** — Auth (magic link + Google OAuth UI), workspaces/invites, schema, AI stub, Context 03 demo seeds.
 
-The interactive contribution engine (sliders, checks, lock-in) arrives in later milestones.
+**Milestone 2 (current)** — Decision items with equal section shares + starter inputs; **Your section** coupled sliders (pin + live share-of-the-whole); confirm / un-confirm; server-enforced ownership + sum-to-100; stats strip; **Full picture** with pre-lock-in masking (hidden content absent from the API).
+
+Still ahead: checks panel & lock-in (M03), structural editing / delegation / RCCA (M04), library (M05).
 
 ## Local setup
 
@@ -42,7 +40,7 @@ Required:
 npm run db:migrate
 ```
 
-Or paste `supabase/migrations/001_initial.sql` into the Supabase SQL Editor and run it.
+Or paste `supabase/migrations/*.sql` into the Supabase SQL Editor and run them in order (include `002_update_children_weights.sql` for the preferred atomic weight RPC).
 
 3. Auth redirects: in Supabase → Authentication → URL configuration:
 
@@ -85,6 +83,8 @@ Enable Email provider in Supabase Auth (on by default). For local testing, check
 | `npm run build` | Production build |
 | `npm run db:migrate` | Apply `supabase/migrations` via pooler |
 | `npm run verify:demo` | Offline check that demo trees sum to 100 and hit Context 03 fixture stats |
+| `npm run test:m2-engine` | Offline M02 engine/masking unit checks |
+| `npm run accept:m2` | Live M02 acceptance against Supabase |
 
 ## Spec
 

@@ -9,7 +9,9 @@
     "lint": "next lint",
     "db:migrate": "node scripts/apply-migration.mjs",
     "verify:demo": "node --experimental-strip-types scripts/verify-demo-weights.mjs",
-    "accept:m1": "node --experimental-strip-types scripts/m1-acceptance.mjs"
+    "accept:m1": "node --experimental-strip-types scripts/m1-acceptance.mjs",
+    "test:m2-engine": "npx --yes tsx scripts/m2-engine-unit.mjs",
+    "accept:m2": "npx --yes tsx scripts/m2-acceptance.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",
