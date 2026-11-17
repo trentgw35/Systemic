@@ -40,6 +40,8 @@ export type Item = {
   locked_at: string | null;
   lock_stamp: string | null;
   expected_areas: string[] | null;
+  checks_snapshot?: unknown | null;
+  confirmations_snapshot?: unknown | null;
 };
 
 export type NodeRow = {

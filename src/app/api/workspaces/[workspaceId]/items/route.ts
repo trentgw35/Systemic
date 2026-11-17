@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { equalShares } from "@/lib/engine/weights";
 import { requireWorkspaceMember } from "@/lib/items/load";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
 const bodySchema = z.object({
@@ -51,10 +52,10 @@ export async function POST(
   }
 
   const { title, group_tag, mode, sections } = parsed.data;
+  const admin = createAdminClient();
 
-  // Every section owner must be a workspace member
   const ownerIds = [...new Set(sections.map((s) => s.owner_id))];
-  const { data: members } = await supabase
+  const { data: members } = await admin
     .from("memberships")
     .select("user_id")
     .eq("workspace_id", workspaceId)
@@ -67,7 +68,7 @@ export async function POST(
     );
   }
 
-  const { data: item, error: itemErr } = await supabase
+  const { data: item, error: itemErr } = await admin
     .from("items")
     .insert({
       workspace_id: workspaceId,
@@ -99,29 +100,27 @@ export async function POST(
     sort_order: i,
   }));
 
-  const { data: sectionNodes, error: secErr } = await supabase
+  const { data: sectionNodes, error: secErr } = await admin
     .from("nodes")
     .insert(sectionRows)
     .select("id");
 
   if (secErr || !sectionNodes || sectionNodes.length !== sections.length) {
-    await supabase.from("items").delete().eq("id", item.id);
+    await admin.from("items").delete().eq("id", item.id);
     return NextResponse.json(
       { error: secErr?.message ?? "Failed to create sections" },
       { status: 500 },
     );
   }
 
-  // Two starter inputs per section at 50/50, opinion, un-confirmed
-  const starterKind = "opinion" as const;
   for (let i = 0; i < sectionNodes.length; i++) {
     const parentId = sectionNodes[i].id;
-    const { error: childErr } = await supabase.from("nodes").insert([
+    const { error: childErr } = await admin.from("nodes").insert([
       {
         item_id: item.id,
         parent_id: parentId,
         label: "Starter input A",
-        kind: starterKind,
+        kind: "opinion",
         local_weight: 50,
         owner_id: null,
         confirmed: false,
@@ -131,7 +130,7 @@ export async function POST(
         item_id: item.id,
         parent_id: parentId,
         label: "Starter input B",
-        kind: starterKind,
+        kind: "opinion",
         local_weight: 50,
         owner_id: null,
         confirmed: false,
@@ -139,7 +138,7 @@ export async function POST(
       },
     ]);
     if (childErr) {
-      await supabase.from("items").delete().eq("id", item.id);
+      await admin.from("items").delete().eq("id", item.id);
       return NextResponse.json(
         { error: childErr.message },
         { status: 500 },

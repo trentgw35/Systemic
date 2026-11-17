@@ -14,9 +14,11 @@ Multi-user app for weighted decision trees and reverse root-cause (RCCA) records
 
 **Milestone 1** — Auth (magic link + Google OAuth UI), workspaces/invites, schema, AI stub, Context 03 demo seeds.
 
-**Milestone 2 (current)** — Decision items with equal section shares + starter inputs; **Your section** coupled sliders (pin + live share-of-the-whole); confirm / un-confirm; server-enforced ownership + sum-to-100; stats strip; **Full picture** with pre-lock-in masking (hidden content absent from the API).
+**Milestone 2** — Decision items, coupled sliders, confirm, stats, masked Full picture.
 
-Still ahead: checks panel & lock-in (M03), structural editing / delegation / RCCA (M04), library (M05).
+**Milestone 3 (current)** — **Things to check** (Context 03 v2), lock-in with graded stamp + record view, interactive Full picture (share bars, largest-first, focus mode), RLS so members cannot bypass the API to read/edit others’ pre-lock-in trees.
+
+Still ahead: structural editing / delegation / RCCA (M04), library (M05).
 
 ## Local setup
 
@@ -85,6 +87,9 @@ Enable Email provider in Supabase Auth (on by default). For local testing, check
 | `npm run verify:demo` | Offline check that demo trees sum to 100 and hit Context 03 fixture stats |
 | `npm run test:m2-engine` | Offline M02 engine/masking unit checks |
 | `npm run accept:m2` | Live M02 acceptance against Supabase |
+| `npm run test:m3-checks` | Offline M03 checks + lock-in stamp fixtures |
+
+If your Supabase project was created from an earlier migration, also run `003_rls_lockin_snapshots.sql` in the SQL Editor (adds snapshot columns and tightens RLS).
 
 ## Spec
 

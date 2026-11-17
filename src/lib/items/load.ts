@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Item, NodeRow } from "@/lib/types";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export async function requireWorkspaceMember(
   supabase: SupabaseClient,
@@ -15,11 +16,20 @@ export async function requireWorkspaceMember(
   return data;
 }
 
+/**
+ * Load item + full node tree for a workspace member.
+ * Membership is checked with the user-scoped client; nodes are read with the
+ * service role so RLS can deny direct browser/PostgREST access to other
+ * members' pre-lock-in content while the API still computes masked views.
+ */
 export async function loadItemForMember(
   supabase: SupabaseClient,
   itemId: string,
   userId: string,
-): Promise<{ item: Item; rows: NodeRow[] } | { error: string; status: number }> {
+): Promise<
+  | { item: Item; rows: NodeRow[]; nameById: Map<string, string> }
+  | { error: string; status: number }
+> {
   const { data: item, error } = await supabase
     .from("items")
     .select("*")
@@ -39,7 +49,8 @@ export async function loadItemForMember(
     return { error: "Forbidden", status: 403 };
   }
 
-  const { data: rows, error: nErr } = await supabase
+  const admin = createAdminClient();
+  const { data: rows, error: nErr } = await admin
     .from("nodes")
     .select("*")
     .eq("item_id", itemId)
@@ -49,11 +60,30 @@ export async function loadItemForMember(
     return { error: nErr.message, status: 500 };
   }
 
+  const ownerIds = [
+    ...new Set(
+      (rows ?? [])
+        .map((r) => r.owner_id as string | null)
+        .filter((id): id is string => Boolean(id)),
+    ),
+  ];
+  const nameById = new Map<string, string>();
+  if (ownerIds.length) {
+    const { data: profiles } = await admin
+      .from("profiles")
+      .select("id, name, email")
+      .in("id", ownerIds);
+    for (const p of profiles ?? []) {
+      nameById.set(p.id, p.name?.trim() || p.email || "Someone");
+    }
+  }
+
   return {
     item: item as Item,
     rows: (rows ?? []).map((r) => ({
       ...r,
       local_weight: Number(r.local_weight),
     })) as NodeRow[],
+    nameById,
   };
 }

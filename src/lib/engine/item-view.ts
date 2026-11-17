@@ -1,4 +1,9 @@
 import type { Item, NodeRow } from "@/lib/types";
+import {
+  computeChecks,
+  confirmationsList,
+  type ChecksSnapshot,
+} from "./checks";
 import { computeStats, statsLabels } from "./stats";
 import { maskTreeForViewer, ownedSets, type MaskedNode } from "./mask";
 import { buildTree, pathLabels, type TreeNode } from "./tree";
@@ -16,8 +21,11 @@ export type ItemViewResponse = {
     locked_at: string | null;
     lock_stamp: string | null;
   };
+  viewer_is_item_owner: boolean;
   stats: ReturnType<typeof computeStats>;
   stats_labels: ReturnType<typeof statsLabels>;
+  checks: ChecksSnapshot;
+  confirmations: ReturnType<typeof confirmationsList>;
   /** Masked tree for Full picture */
   tree: MaskedNode[];
   /** Own editable sets for Your section */
@@ -36,19 +44,35 @@ export type ItemViewResponse = {
       has_children: boolean;
     }>;
   }>;
-  /** Full tree only used server-side for tests — never sent when masked */
 };
 
 export function buildItemView(
   item: Item,
   rows: NodeRow[],
   viewerId: string,
+  nameById: Map<string, string> = new Map(),
 ): ItemViewResponse {
   const tree = buildTree(rows);
   const locked = Boolean(item.locked_at);
   const stats = computeStats(tree, item.mode, item.locked_at, item.lock_stamp);
   const masked = maskTreeForViewer(tree, viewerId, locked);
   const owned = ownedSets(tree, viewerId);
+
+  const liveChecks = computeChecks(
+    tree,
+    item.mode,
+    nameById,
+    item.expected_areas,
+  );
+  const checks =
+    locked && item.checks_snapshot
+      ? (item.checks_snapshot as ChecksSnapshot)
+      : liveChecks;
+
+  const confirmations =
+    locked && item.confirmations_snapshot
+      ? (item.confirmations_snapshot as ReturnType<typeof confirmationsList>)
+      : confirmationsList(tree, nameById);
 
   return {
     item: {
@@ -63,8 +87,11 @@ export function buildItemView(
       locked_at: item.locked_at,
       lock_stamp: item.lock_stamp,
     },
+    viewer_is_item_owner: item.created_by === viewerId,
     stats,
     stats_labels: statsLabels(item.mode),
+    checks,
+    confirmations,
     tree: masked,
     your_sections: owned.map((s) => ({
       parent_id: s.parent.id,

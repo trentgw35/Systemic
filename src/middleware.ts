@@ -11,9 +11,20 @@ export async function middleware(request: NextRequest) {
     process.env.SUPABASE_ANON_KEY ??
     "";
 
-  // Without Supabase env, allow public pages; protected routes will fail closed later.
+  const path = request.nextUrl.pathname;
+  const isAuthRoute =
+    path.startsWith("/login") || path.startsWith("/auth");
+  const isInvite = path.startsWith("/invite/");
+  const isPublicApi = path === "/api/public-config";
+  const isPublic = isAuthRoute || path === "/" || isPublicApi || isInvite;
+
+  // Fail closed for protected routes when Supabase env is missing.
   if (!url || !anon) {
-    return supabaseResponse;
+    if (isPublic) return supabaseResponse;
+    const redirect = request.nextUrl.clone();
+    redirect.pathname = "/login";
+    redirect.searchParams.set("error", "config");
+    return NextResponse.redirect(redirect);
   }
 
   const supabase = createServerClient(url, anon, {
@@ -37,15 +48,7 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const path = request.nextUrl.pathname;
-  const isAuthRoute =
-    path.startsWith("/login") || path.startsWith("/auth");
-  const isInvite = path.startsWith("/invite/");
-  // Browser client loads URL + anon key before any session exists.
-  const isPublicApi = path === "/api/public-config";
-  const isPublic = isAuthRoute || path === "/" || isPublicApi;
-
-  if (!user && !isPublic && !isInvite) {
+  if (!user && !isPublic) {
     const redirect = request.nextUrl.clone();
     redirect.pathname = "/login";
     redirect.searchParams.set("next", path);

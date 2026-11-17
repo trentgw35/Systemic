@@ -52,7 +52,9 @@ create table public.items (
   updated_at timestamptz not null default now(),
   locked_at timestamptz,
   lock_stamp text,
-  expected_areas text[]
+  expected_areas text[],
+  checks_snapshot jsonb,
+  confirmations_snapshot jsonb
 );
 
 create index items_workspace_id_idx on public.items (workspace_id);
@@ -283,8 +285,16 @@ alter table public.items enable row level security;
 alter table public.nodes enable row level security;
 alter table public.action_notes enable row level security;
 
-create policy profiles_select_authenticated on public.profiles
-  for select to authenticated using (true);
+create policy profiles_select_scoped on public.profiles
+  for select to authenticated using (
+    id = auth.uid()
+    or exists (
+      select 1
+      from public.memberships m1
+      join public.memberships m2 on m1.workspace_id = m2.workspace_id
+      where m1.user_id = auth.uid() and m2.user_id = profiles.id
+    )
+  );
 create policy profiles_update_own on public.profiles
   for update to authenticated using (id = auth.uid()) with check (id = auth.uid());
 
@@ -316,43 +326,33 @@ create policy items_insert_member on public.items
   for insert to authenticated with check (
     public.is_workspace_member(workspace_id) and created_by = auth.uid()
   );
-create policy items_update_member on public.items
-  for update to authenticated using (public.is_workspace_member(workspace_id));
+-- Only the item owner may update (lock-in, group tag, snapshots) or delete.
+create policy items_update_owner on public.items
+  for update to authenticated using (
+    created_by = auth.uid() and public.is_workspace_member(workspace_id)
+  )
+  with check (
+    created_by = auth.uid() and public.is_workspace_member(workspace_id)
+  );
 create policy items_delete_owner on public.items
   for delete to authenticated using (
     created_by = auth.uid() and public.is_workspace_member(workspace_id)
   );
 
--- Nodes: membership required. Pre-lock-in content masking is enforced in the API
--- (Context 04 rule 2). RLS still denies non-members entirely.
-create policy nodes_select_member on public.nodes
+-- Nodes: PostgREST cannot read other members' pre-lock-in trees or mutate
+-- weights. The Next.js API uses the service role after membership + ownership
+-- checks, then returns a masked view (Context 04 rule 2).
+-- After lock-in, members may SELECT the revealed tree directly if needed.
+create policy nodes_select_when_locked on public.nodes
   for select to authenticated using (
     exists (
       select 1 from public.items i
-      where i.id = item_id and public.is_workspace_member(i.workspace_id)
+      where i.id = item_id
+        and i.locked_at is not null
+        and public.is_workspace_member(i.workspace_id)
     )
   );
-create policy nodes_insert_member on public.nodes
-  for insert to authenticated with check (
-    exists (
-      select 1 from public.items i
-      where i.id = item_id and public.is_workspace_member(i.workspace_id)
-    )
-  );
-create policy nodes_update_member on public.nodes
-  for update to authenticated using (
-    exists (
-      select 1 from public.items i
-      where i.id = item_id and public.is_workspace_member(i.workspace_id)
-    )
-  );
-create policy nodes_delete_member on public.nodes
-  for delete to authenticated using (
-    exists (
-      select 1 from public.items i
-      where i.id = item_id and public.is_workspace_member(i.workspace_id)
-    )
-  );
+-- No INSERT/UPDATE/DELETE policies for authenticated on nodes.
 
 create policy action_notes_select_member on public.action_notes
   for select to authenticated using (

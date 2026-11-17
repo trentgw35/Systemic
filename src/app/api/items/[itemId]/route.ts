@@ -24,6 +24,11 @@ export async function GET(
     );
   }
 
-  const view = buildItemView(loaded.item, loaded.rows, user.id);
+  const view = buildItemView(
+    loaded.item,
+    loaded.rows,
+    user.id,
+    loaded.nameById,
+  );
   return NextResponse.json(view);
 }

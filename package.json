@@ -11,7 +11,8 @@
     "verify:demo": "node --experimental-strip-types scripts/verify-demo-weights.mjs",
     "accept:m1": "node --experimental-strip-types scripts/m1-acceptance.mjs",
     "test:m2-engine": "npx --yes tsx scripts/m2-engine-unit.mjs",
-    "accept:m2": "npx --yes tsx scripts/m2-acceptance.mjs"
+    "accept:m2": "npx --yes tsx scripts/m2-acceptance.mjs",
+    "test:m3-checks": "npx --yes tsx scripts/m3-checks-unit.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",

@@ -3,6 +3,7 @@ import { z } from "zod";
 import { childrenOf } from "@/lib/engine/tree";
 import { redistributeWeights } from "@/lib/engine/weights";
 import { loadItemForMember } from "@/lib/items/load";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
 const bodySchema = z.object({
@@ -39,7 +40,6 @@ export async function PATCH(
   if (!target) {
     return NextResponse.json({ error: "Node not found" }, { status: 404 });
   }
-
   if (!target.parent_id) {
     return NextResponse.json(
       { error: "Level-1 section weights are edited when reshaping the item" },
@@ -82,57 +82,37 @@ export async function PATCH(
     );
   }
 
+  const admin = createAdminClient();
   const byId = new Map(next.map((r) => [r.id, r.local_weight]));
+  const upsertRows = siblingRows.map((r) => ({
+    id: r.id,
+    item_id: r.item_id,
+    parent_id: r.parent_id,
+    label: r.label,
+    kind: r.kind,
+    local_weight: byId.get(r.id) ?? r.local_weight,
+    owner_id: r.owner_id,
+    delegated_from: r.delegated_from,
+    confirmed: r.confirmed,
+    confirmed_at: r.confirmed_at,
+    sort_order: r.sort_order,
+    created_at: r.created_at,
+  }));
 
-  // Single multi-row upsert = one transaction so deferred sum-to-100 sees a
-  // complete children-set. Prefer RPC when migration 002 is applied.
-  const { error: rpcError } = await supabase.rpc("update_children_weights", {
-    p_item_id: itemId,
-    p_parent_id: target.parent_id,
-    p_weights: next,
-    p_actor: user.id,
-  });
-
-  if (rpcError) {
-    // Fallback when 002 is not yet applied on the project
-    const missingFn =
-      /could not find the function|function .* does not exist/i.test(
-        rpcError.message,
-      );
-    if (!missingFn) {
-      return NextResponse.json({ error: rpcError.message }, { status: 500 });
-    }
-
-    const upsertRows = siblingRows.map((r) => ({
-      id: r.id,
-      item_id: r.item_id,
-      parent_id: r.parent_id,
-      label: r.label,
-      kind: r.kind,
-      local_weight: byId.get(r.id) ?? r.local_weight,
-      owner_id: r.owner_id,
-      delegated_from: r.delegated_from,
-      confirmed: r.confirmed,
-      confirmed_at: r.confirmed_at,
-      sort_order: r.sort_order,
-      created_at: r.created_at,
-    }));
-
-    const { error: upErr } = await supabase.from("nodes").upsert(upsertRows);
-    if (upErr) {
-      return NextResponse.json({ error: upErr.message }, { status: 500 });
-    }
-
-    await supabase
-      .from("nodes")
-      .update({ confirmed: false, confirmed_at: null })
-      .eq("id", parent.id);
-
-    await supabase
-      .from("items")
-      .update({ updated_at: new Date().toISOString() })
-      .eq("id", itemId);
+  const { error: upErr } = await admin.from("nodes").upsert(upsertRows);
+  if (upErr) {
+    return NextResponse.json({ error: upErr.message }, { status: 500 });
   }
+
+  await admin
+    .from("nodes")
+    .update({ confirmed: false, confirmed_at: null })
+    .eq("id", parent.id);
+
+  await admin
+    .from("items")
+    .update({ updated_at: new Date().toISOString() })
+    .eq("id", itemId);
 
   return NextResponse.json({
     weights: next,
